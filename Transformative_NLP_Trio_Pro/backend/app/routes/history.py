@@ -52,50 +52,6 @@ async def list_history(
 
 
 @router.get(
-    "/{history_id}",
-    response_model=HistoryResponse,
-    summary="Get a single history record by ID",
-)
-async def get_history(
-    history_id: uuid.UUID,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    try:
-        item = get_history_item(db, current_user, history_id)
-        return HistoryResponse.model_validate(item)
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Get history item error: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to retrieve history record",
-        )
-
-
-@router.delete(
-    "/{history_id}",
-    summary="Delete a history record",
-)
-async def delete_history(
-    history_id: uuid.UUID,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    try:
-        return delete_history_item(db, current_user, history_id)
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Delete history error: {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to delete history record",
-        )
-
-
-@router.get(
     "/search",
     summary="Search processing history by text content",
 )
@@ -146,4 +102,48 @@ async def get_recent(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to retrieve recent history",
+        )
+
+
+@router.get(
+    "/{history_id}",
+    response_model=HistoryResponse,
+    summary="Get a single history record by ID",
+)
+async def get_history(
+    history_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        item = get_history_item(db, current_user, history_id)
+        return HistoryResponse.model_validate(item)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Get history item error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to retrieve history record",
+        )
+
+
+@router.delete(
+    "/{history_id}",
+    summary="Delete a history record",
+)
+async def delete_history(
+    history_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        return delete_history_item(db, current_user, history_id)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Delete history error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to delete history record",
         )
