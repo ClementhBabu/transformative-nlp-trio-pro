@@ -312,3 +312,97 @@ def generate_pdf_report(
     doc.build(story)
     logger.info("PDF report generated: %s", output_path)
     return output_path
+
+
+def generate_report(db: Any, user: Any, history_id: Any) -> dict:
+    from fastapi import HTTPException
+    from app.database.models import ProcessingHistory
+    
+    history = db.query(ProcessingHistory).filter(
+        ProcessingHistory.id == history_id,
+        ProcessingHistory.user_id == user.id
+    ).first()
+    if not history:
+        raise HTTPException(status_code=404, detail="Processing history record not found")
+        
+    processing_data = {
+        "original_text": history.recognized_text,
+        "source_language": history.source_language,
+        "target_language": history.target_language,
+        "summary": history.summary_text,
+        "translation": history.translated_text,
+        "sentiment": history.sentiment,
+        "keywords": history.keywords,
+        "meeting_minutes": history.meeting_minutes,
+    }
+    
+    user_info = {
+        "id": str(user.id),
+        "name": user.name,
+        "email": user.email,
+    }
+    
+    try:
+        output_path = generate_pdf_report(processing_data, user_info)
+        filename = os.path.basename(output_path)
+        return {
+            "report_url": f"/api/report/download/{filename}",
+            "generated_at": datetime.utcnow()
+        }
+    except Exception as e:
+        logger.error(f"Failed to generate PDF report: {e}")
+        raise HTTPException(status_code=500, detail=f"PDF generation failed: {str(e)}")
+
+
+def get_report_path(filename: str) -> str:
+    from fastapi import HTTPException
+    # Ensure there are no path traversal vulnerabilities
+    filename = os.path.basename(filename)
+    file_path = os.path.join(settings.REPORTS_DIR, filename)
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Report file not found")
+    return file_path
+
+
+def list_reports(db: Any, user: Any) -> list:
+    uid = str(user.id).replace("-", "")[:8]
+    prefix = f"report_{uid}_"
+    reports = []
+    if os.path.exists(settings.REPORTS_DIR):
+        for filename in os.listdir(settings.REPORTS_DIR):
+            if filename.startswith(prefix) and filename.endswith(".pdf"):
+                file_path = os.path.join(settings.REPORTS_DIR, filename)
+                try:
+                    stat = os.stat(file_path)
+                    created_at = datetime.utcfromtimestamp(stat.st_mtime)
+                    reports.append({
+                        "filename": filename,
+                        "report_url": f"/api/report/download/{filename}",
+                        "created_at": created_at,
+                        "size_bytes": stat.st_size
+                    })
+                except Exception:
+                    pass
+    # Sort by created_at descending
+    reports.sort(key=lambda x: x["created_at"], reverse=True)
+    return reports
+
+
+def delete_report(db: Any, user: Any, report_id: str) -> dict:
+    from fastapi import HTTPException
+    filename = os.path.basename(report_id)
+    uid = str(user.id).replace("-", "")[:8]
+    prefix = f"report_{uid}_"
+    if not filename.startswith(prefix) or not filename.endswith(".pdf"):
+        raise HTTPException(status_code=403, detail="Not authorized to delete this report")
+    
+    file_path = os.path.join(settings.REPORTS_DIR, filename)
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Report file not found")
+        
+    try:
+        os.remove(file_path)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to delete report: {str(e)}")
+        
+    return {"status": "success", "message": f"Report {filename} deleted successfully"}

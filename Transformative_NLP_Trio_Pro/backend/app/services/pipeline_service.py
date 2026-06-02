@@ -149,12 +149,17 @@ async def process_pipeline(
         return response
 
     except Exception as e:
+        import traceback
+        error_msg = e.detail if hasattr(e, "detail") else str(e) or type(e).__name__
         _pipeline_store[pipeline_id]["status"] = "failed"
-        _pipeline_store[pipeline_id]["error"] = str(e)
-        logger.error(f"Pipeline {pipeline_id} failed: {e}")
+        _pipeline_store[pipeline_id]["error"] = error_msg
+        logger.error(f"Pipeline {pipeline_id} failed: {error_msg}")
+        logger.error(traceback.format_exc())
+        if hasattr(e, "status_code"):
+            raise e
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Pipeline processing failed: {str(e)}",
+            detail=f"Pipeline processing failed: {error_msg}",
         )
 
 

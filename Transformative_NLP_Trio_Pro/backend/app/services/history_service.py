@@ -42,10 +42,19 @@ def save_processing_record(
 
 def get_user_history(
     db: Session,
-    user_id: uuid.UUID,
+    user: Any,
+    page: int = 1,
     limit: int = 20,
-    offset: int = 0,
-) -> List[ProcessingHistory]:
+) -> Dict[str, Any]:
+    user_id = user.id if hasattr(user, "id") else user
+    offset = (page - 1) * limit
+    
+    total = (
+        db.query(ProcessingHistory)
+        .filter(ProcessingHistory.user_id == user_id)
+        .count()
+    )
+    
     records = (
         db.query(ProcessingHistory)
         .filter(ProcessingHistory.user_id == user_id)
@@ -54,7 +63,17 @@ def get_user_history(
         .limit(limit)
         .all()
     )
-    return records
+    
+    import math
+    pages = math.ceil(total / limit) if limit > 0 else 0
+    
+    return {
+        "items": records,
+        "total": total,
+        "page": page,
+        "limit": limit,
+        "pages": pages,
+    }
 
 
 def get_user_history_count(db: Session, user_id: uuid.UUID) -> int:
@@ -82,6 +101,19 @@ def get_history_by_id(
     )
 
 
+def get_history_item(
+    db: Session,
+    user: Any,
+    history_id: uuid.UUID,
+) -> ProcessingHistory:
+    from fastapi import HTTPException
+    user_id = user.id if hasattr(user, "id") else user
+    item = get_history_by_id(db, history_id, user_id)
+    if not item:
+        raise HTTPException(status_code=404, detail="History record not found")
+    return item
+
+
 def delete_history_record(
     db: Session,
     history_id: uuid.UUID,
@@ -97,14 +129,31 @@ def delete_history_record(
     return True
 
 
+def delete_history_item(
+    db: Session,
+    user: Any,
+    history_id: uuid.UUID,
+) -> dict:
+    user_id = user.id if hasattr(user, "id") else user
+    success = delete_history_record(db, history_id, user_id)
+    if not success:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=404, detail="History record not found")
+    return {"status": "success", "message": "History record deleted successfully"}
+
+
 def search_history(
     db: Session,
-    user_id: uuid.UUID,
+    user: Any,
     search_term: str,
+    page: int = 1,
     limit: int = 20,
-) -> List[ProcessingHistory]:
+) -> Dict[str, Any]:
+    user_id = user.id if hasattr(user, "id") else user
+    offset = (page - 1) * limit
     term = f"%{search_term}%"
-    records = (
+    
+    query = (
         db.query(ProcessingHistory)
         .filter(
             and_(
@@ -117,11 +166,27 @@ def search_history(
                 ),
             )
         )
-        .order_by(desc(ProcessingHistory.created_at))
+    )
+    
+    total = query.count()
+    
+    records = (
+        query.order_by(desc(ProcessingHistory.created_at))
+        .offset(offset)
         .limit(limit)
         .all()
     )
-    return records
+    
+    import math
+    pages = math.ceil(total / limit) if limit > 0 else 0
+    
+    return {
+        "items": records,
+        "total": total,
+        "page": page,
+        "limit": limit,
+        "pages": pages,
+    }
 
 
 def get_recent_items(
@@ -137,3 +202,21 @@ def get_recent_items(
         .all()
     )
     return records
+
+
+def get_recent_history(
+    db: Session,
+    user: Any,
+    limit: int = 10,
+) -> Dict[str, Any]:
+    user_id = user.id if hasattr(user, "id") else user
+    records = get_recent_items(db, user_id, limit)
+    total = (
+        db.query(ProcessingHistory)
+        .filter(ProcessingHistory.user_id == user_id)
+        .count()
+    )
+    return {
+        "items": records,
+        "total": total,
+    }

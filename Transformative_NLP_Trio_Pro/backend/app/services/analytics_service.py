@@ -43,7 +43,8 @@ def log_operation(
     return event
 
 
-def get_user_analytics(db: Session, user_id: uuid.UUID) -> Dict[str, Any]:
+def get_user_analytics(db: Session, user: Any) -> Dict[str, Any]:
+    user_id = user.id if hasattr(user, "id") else user
     total_ops = (
         db.query(func.count(AnalyticsLog.id))
         .filter(AnalyticsLog.user_id == user_id)
@@ -120,7 +121,7 @@ def get_user_analytics(db: Session, user_id: uuid.UUID) -> Dict[str, Any]:
     }
 
 
-def get_admin_analytics(db: Session) -> Dict[str, Any]:
+def get_admin_analytics(db: Session, user: Any = None) -> Dict[str, Any]:
     total_users = (
         db.query(func.count(func.distinct(AnalyticsLog.user_id))).scalar()
     )
@@ -167,7 +168,8 @@ def get_admin_analytics(db: Session) -> Dict[str, Any]:
     }
 
 
-def get_daily_activity(db: Session, days: int = 30) -> List[Dict[str, Any]]:
+def get_daily_breakdown(db: Session, user: Any, days: int = 30) -> List[Dict[str, Any]]:
+    user_id = user.id if hasattr(user, "id") else user
     cutoff = datetime.utcnow() - timedelta(days=days)
 
     results = (
@@ -175,7 +177,12 @@ def get_daily_activity(db: Session, days: int = 30) -> List[Dict[str, Any]]:
             cast(AnalyticsLog.created_at, Date).label("day"),
             func.count(AnalyticsLog.id).label("count"),
         )
-        .filter(AnalyticsLog.created_at >= cutoff)
+        .filter(
+            and_(
+                AnalyticsLog.user_id == user_id,
+                AnalyticsLog.created_at >= cutoff,
+            )
+        )
         .group_by(cast(AnalyticsLog.created_at, Date))
         .order_by(cast(AnalyticsLog.created_at, Date).asc())
         .all()
@@ -187,10 +194,16 @@ def get_daily_activity(db: Session, days: int = 30) -> List[Dict[str, Any]]:
     ]
 
 
-def get_language_usage(db: Session) -> List[Dict[str, Any]]:
+def get_language_stats(db: Session, user: Any) -> Dict[str, Any]:
+    user_id = user.id if hasattr(user, "id") else user
     sources = (
         db.query(AnalyticsLog.source_language, func.count(AnalyticsLog.id))
-        .filter(AnalyticsLog.source_language.isnot(None))
+        .filter(
+            and_(
+                AnalyticsLog.user_id == user_id,
+                AnalyticsLog.source_language.isnot(None),
+            )
+        )
         .group_by(AnalyticsLog.source_language)
         .order_by(func.count(AnalyticsLog.id).desc())
         .limit(20)
@@ -199,7 +212,12 @@ def get_language_usage(db: Session) -> List[Dict[str, Any]]:
 
     targets = (
         db.query(AnalyticsLog.target_language, func.count(AnalyticsLog.id))
-        .filter(AnalyticsLog.target_language.isnot(None))
+        .filter(
+            and_(
+                AnalyticsLog.user_id == user_id,
+                AnalyticsLog.target_language.isnot(None),
+            )
+        )
         .group_by(AnalyticsLog.target_language)
         .order_by(func.count(AnalyticsLog.id).desc())
         .limit(20)
@@ -216,13 +234,14 @@ def get_language_usage(db: Session) -> List[Dict[str, Any]]:
     }
 
 
-def get_operation_counts(db: Session) -> List[Dict[str, Any]]:
+def get_operation_breakdown(db: Session, user: Any) -> List[Dict[str, Any]]:
+    user_id = user.id if hasattr(user, "id") else user
     results = (
         db.query(
             AnalyticsLog.operation_type,
             func.count(AnalyticsLog.id).label("count"),
-            func.count(func.distinct(AnalyticsLog.user_id)).label("unique_users"),
         )
+        .filter(AnalyticsLog.user_id == user_id)
         .group_by(AnalyticsLog.operation_type)
         .order_by(func.count(AnalyticsLog.id).desc())
         .all()
@@ -232,7 +251,6 @@ def get_operation_counts(db: Session) -> List[Dict[str, Any]]:
         {
             "operation": op,
             "count": count,
-            "unique_users": users,
         }
-        for op, count, users in results
+        for op, count in results
     ]
