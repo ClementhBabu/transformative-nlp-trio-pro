@@ -54,7 +54,10 @@ function ResultCard({
     toast.success('Copied to clipboard!');
   };
 
-  const sentConfig = sentimentConfig[sentiment?.toLowerCase()] || sentimentConfig.neutral;
+  const sentimentText = typeof sentiment === 'object' && sentiment !== null
+    ? sentiment.classification || sentiment.label || ''
+    : (sentiment || '');
+  const sentConfig = sentimentConfig[sentimentText.toLowerCase()] || sentimentConfig.neutral;
   const SentIcon = sentConfig.icon;
 
   const handlePlay = () => {
@@ -78,7 +81,7 @@ function ResultCard({
             <Typography variant="h6" fontWeight={600}>
               Results
             </Typography>
-            {sentiment && (
+            {sentimentText && (
               <Chip
                 icon={<SentIcon />}
                 label={sentConfig.label}

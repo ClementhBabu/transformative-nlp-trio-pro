@@ -33,6 +33,26 @@ async def save_upload_file(
         max_size = MAX_UPLOAD_SIZE_BYTES
 
     filename = upload_file.filename or "unknown"
+    
+    # If the filename has no extension (e.g. "blob" or "unknown"), guess it from content_type
+    if "." not in filename:
+        content_type = upload_file.content_type or ""
+        guessed_ext = None
+        if "webm" in content_type:
+            guessed_ext = "webm"
+        elif "wav" in content_type:
+            guessed_ext = "wav"
+        elif "mpeg" in content_type or "mp3" in content_type:
+            guessed_ext = "mp3"
+        elif "ogg" in content_type:
+            guessed_ext = "ogg"
+        elif "mp4" in content_type or "m4a" in content_type:
+            guessed_ext = "m4a"
+            
+        if guessed_ext:
+            filename = f"{filename}.{guessed_ext}"
+            upload_file.filename = filename
+
     if not validate_audio_file(filename):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

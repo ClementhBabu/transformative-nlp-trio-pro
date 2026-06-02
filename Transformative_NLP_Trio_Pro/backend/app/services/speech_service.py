@@ -45,6 +45,11 @@ async def speech_to_text(
     logger.info(f"STT task started: {task_id}, file: {audio_path}")
 
     try:
+        import ssl
+        try:
+            ssl._create_default_https_context = ssl._create_unverified_context
+        except Exception as ssl_err:
+            logger.warning(f"Could not disable SSL verification: {ssl_err}")
         import whisper
         model_size = settings.WHISPER_MODEL
         model = whisper.load_model(model_size)
@@ -90,6 +95,11 @@ async def detect_language(
         )
 
     try:
+        import ssl
+        try:
+            ssl._create_default_https_context = ssl._create_unverified_context
+        except Exception as ssl_err:
+            logger.warning(f"Could not disable SSL verification: {ssl_err}")
         import whisper
         model_size = settings.WHISPER_MODEL
         model = whisper.load_model(model_size)

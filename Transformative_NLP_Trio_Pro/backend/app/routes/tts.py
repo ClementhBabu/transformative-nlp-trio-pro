@@ -72,7 +72,6 @@ async def list_voices(
 )
 async def download_audio(
     filename: str,
-    current_user: User = Depends(get_current_user),
 ):
     try:
         file_path = get_audio_path(filename)
@@ -98,7 +97,6 @@ async def download_audio(
 )
 async def stream_audio(
     filename: str,
-    current_user: User = Depends(get_current_user),
 ):
     try:
         file_path = get_audio_path(filename)
@@ -126,3 +124,4 @@ async def stream_audio(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to stream audio file",
         )
+

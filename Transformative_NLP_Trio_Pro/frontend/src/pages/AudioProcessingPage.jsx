@@ -79,25 +79,41 @@ function AudioProcessingPage() {
 
     try {
       const formData = new FormData();
-      formData.append('file', audioFile.blob);
-      formData.append('target_language', targetLang);
-      formData.append('summary_mode', summaryMode);
+      const mimeType = audioFile.blob.type || '';
+      let filename = 'recording.webm';
+      if (mimeType.includes('wav')) {
+        filename = 'recording.wav';
+      } else if (mimeType.includes('mp4') || mimeType.includes('m4a')) {
+        filename = 'recording.m4a';
+      } else if (mimeType.includes('mp3') || mimeType.includes('mpeg')) {
+        filename = 'recording.mp3';
+      } else if (mimeType.includes('ogg')) {
+        filename = 'recording.ogg';
+      }
+      formData.append('file', audioFile.blob, filename);
+      formData.append('target_lang', targetLang);
+      formData.append('mode', summaryMode);
 
       const response = await pipelineAPI.process(formData);
       const data = response.data;
 
       updateStep('upload', 'completed');
-      updateStep('recognize', 'completed', data.transcript || data.text || 'Speech recognized successfully.');
-      updateStep('summarize', 'completed', data.summary || 'Summary generated.');
-      updateStep('translate', 'completed', data.translation || 'Translation completed.');
+      updateStep('recognize', 'completed', data.recognized_text || 'Speech recognized successfully.');
+      updateStep('summarize', 'completed', data.summary_text || 'Summary generated.');
+      updateStep('translate', 'completed', data.translated_text || 'Translation completed.');
       updateStep('tts', 'completed');
 
-      if (data.sentiment) {
-        setResults((prev) => ({ ...prev, sentiment: data.sentiment }));
-      }
-      if (data.keywords) {
-        setResults((prev) => ({ ...prev, keywords: Array.isArray(data.keywords) ? data.keywords : [] }));
-      }
+      setResults((prev) => ({
+        ...prev,
+        recognize: data.recognized_text || 'Speech recognized successfully.',
+        summarize: data.summary_text || 'Summary generated.',
+        translate: data.translated_text || 'Translation completed.',
+        audio_url: data.audio_output_url,
+        tts_audio_url: data.audio_output_url,
+        history_id: data.history_id,
+        sentiment: data.sentiment,
+        keywords: Array.isArray(data.keywords) ? data.keywords : [],
+      }));
 
       toast.success('Processing pipeline completed!');
     } catch (error) {

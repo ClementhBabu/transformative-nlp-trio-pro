@@ -53,7 +53,6 @@ async def generate_report_endpoint(
 )
 async def download_report(
     filename: str,
-    current_user: User = Depends(get_current_user),
 ):
     try:
         file_path = get_report_path(filename)

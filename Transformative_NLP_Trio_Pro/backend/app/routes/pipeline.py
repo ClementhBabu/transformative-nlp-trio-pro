@@ -27,20 +27,24 @@ router = APIRouter(prefix="/api/pipeline", tags=["Processing Pipeline"])
 async def process(
     file: UploadFile = File(..., description="Audio file to process"),
     target_lang: Optional[str] = Form(None, description="Target language for translation"),
+    target_language: Optional[str] = Form(None, description="Alternative target language name"),
     source_lang: Optional[str] = Form(None, description="Source language for STT"),
     mode: str = Form("medium", description="Summarization mode (short/medium/detailed/bullet)"),
+    summary_mode: Optional[str] = Form(None, description="Alternative summarization mode name"),
     generate_tts: bool = Form(True, description="Whether to generate TTS output audio"),
     generate_report: bool = Form(False, description="Whether to generate a PDF report"),
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    actual_target_lang = target_lang or target_language
+    actual_mode = summary_mode or mode
     try:
         result = await process_pipeline(
             db=db,
             user=current_user,
             upload_file=file,
-            mode=mode,
-            target_lang=target_lang,
+            mode=actual_mode,
+            target_lang=actual_target_lang,
             source_lang=source_lang,
             generate_tts=generate_tts,
             generate_report_flag=generate_report,
