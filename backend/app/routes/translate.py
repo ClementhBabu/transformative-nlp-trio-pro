@@ -6,7 +6,11 @@ from sqlalchemy.orm import Session
 
 from app.database.database import get_db
 from app.database.models import User
-from app.schemas.processing import TranslateRequest, TranslateResponse
+from app.schemas.processing import (
+    LanguageDetectRequest,
+    TranslateRequest,
+    TranslateResponse,
+)
 from app.services.translate_service import (
     detect_language,
     get_supported_languages,
@@ -71,11 +75,11 @@ async def list_languages(
     summary="Detect the language of provided text",
 )
 async def detect_text_language(
-    text: str,
+    payload: LanguageDetectRequest,
     current_user: User = Depends(get_current_user),
 ):
     try:
-        result = detect_language(text)
+        result = detect_language(payload.text)
         return result
     except HTTPException:
         raise

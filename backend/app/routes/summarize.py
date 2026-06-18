@@ -1,12 +1,15 @@
 import logging
-from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database.database import get_db
 from app.database.models import User
-from app.schemas.processing import SummarizeRequest, SummarizeResponse
+from app.schemas.processing import (
+    BatchSummarizeRequest,
+    SummarizeRequest,
+    SummarizeResponse,
+)
 from app.services.summarize_service import (
     get_available_modes,
     summarize_batch,
@@ -51,12 +54,11 @@ async def summarize(
     summary="Summarize multiple texts in a single request",
 )
 async def batch_summarize(
-    texts: List[str],
-    mode: str = "medium",
+    payload: BatchSummarizeRequest,
     current_user: User = Depends(get_current_user),
 ):
     try:
-        result = summarize_batch(texts, mode=mode)
+        result = summarize_batch(payload.texts, mode=payload.mode)
         return result
     except HTTPException:
         raise

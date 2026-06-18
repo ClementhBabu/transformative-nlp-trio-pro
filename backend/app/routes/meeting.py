@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.database.database import get_db
 from app.database.models import User
-from app.schemas.processing import MeetingMinutesResponse
+from app.schemas.processing import MeetingMinutesRequest, MeetingMinutesResponse
 from app.services.meeting_service import (
     generate_minutes,
     generate_minutes_from_audio,
@@ -25,11 +25,11 @@ router = APIRouter(prefix="/api/meeting", tags=["Meeting Minutes"])
     summary="Generate meeting minutes from a transcript text",
 )
 async def generate_minutes_endpoint(
-    text: str,
+    payload: MeetingMinutesRequest,
     current_user: User = Depends(get_current_user),
 ):
     try:
-        result = generate_minutes(text)
+        result = generate_minutes(payload.text)
         return MeetingMinutesResponse(
             title=result.get("title"),
             date=result.get("date"),

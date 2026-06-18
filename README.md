@@ -117,11 +117,11 @@ Audio Output
 
 ### Frontend
 
-* React.js
+* React.js (Create React App)
 * HTML5
 * CSS3
 * JavaScript
-* Bootstrap
+* Material UI (MUI)
 * Axios
 
 ### Backend
@@ -319,8 +319,11 @@ uvicorn app.main:app --reload
 ```bash
 cd frontend
 npm install
-npm run dev
+npm start
 ```
+
+The frontend dev server runs on `http://localhost:3000` and expects the backend at
+`http://localhost:8000` (override with the `REACT_APP_API_URL` environment variable).
 
 ---
 

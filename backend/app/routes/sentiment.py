@@ -1,12 +1,15 @@
 import logging
-from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database.database import get_db
 from app.database.models import User
-from app.schemas.processing import SentimentResponse
+from app.schemas.processing import (
+    BatchSentimentRequest,
+    SentimentRequest,
+    SentimentResponse,
+)
 from app.services.sentiment_service import analyze_sentiment, batch_analyze_sentiment
 from app.utils.auth import get_current_user
 
@@ -21,11 +24,11 @@ router = APIRouter(prefix="/api/sentiment", tags=["Sentiment Analysis"])
     summary="Analyze the sentiment of provided text",
 )
 async def analyze(
-    text: str,
+    payload: SentimentRequest,
     current_user: User = Depends(get_current_user),
 ):
     try:
-        result = analyze_sentiment(text)
+        result = analyze_sentiment(payload.text)
         return SentimentResponse(
             polarity=result["polarity"],
             subjectivity=result["subjectivity"],
@@ -46,11 +49,11 @@ async def analyze(
     summary="Analyze sentiment for multiple texts",
 )
 async def batch_analyze(
-    texts: List[str],
+    payload: BatchSentimentRequest,
     current_user: User = Depends(get_current_user),
 ):
     try:
-        return batch_analyze_sentiment(texts)
+        return batch_analyze_sentiment(payload.texts)
     except HTTPException:
         raise
     except Exception as e:

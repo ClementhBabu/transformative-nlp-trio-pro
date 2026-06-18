@@ -346,6 +346,7 @@ def generate_report(db: Any, user: Any, history_id: Any) -> dict:
         output_path = generate_pdf_report(processing_data, user_info)
         filename = os.path.basename(output_path)
         return {
+            "filename": filename,
             "report_url": f"/api/report/download/{filename}",
             "generated_at": datetime.utcnow()
         }

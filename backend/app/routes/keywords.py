@@ -1,11 +1,15 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database.database import get_db
 from app.database.models import User
-from app.schemas.processing import KeywordResponse
+from app.schemas.processing import (
+    KeyphraseRequest,
+    KeywordRequest,
+    KeywordResponse,
+)
 from app.services.keywords_service import extract_keyphrases, extract_keywords
 from app.utils.auth import get_current_user
 
@@ -20,12 +24,11 @@ router = APIRouter(prefix="/api/keywords", tags=["Keyword Extraction"])
     summary="Extract keywords from provided text",
 )
 async def extract(
-    text: str,
-    num_keywords: int = Query(10, ge=1, le=50, description="Number of keywords to extract"),
+    payload: KeywordRequest,
     current_user: User = Depends(get_current_user),
 ):
     try:
-        result = extract_keywords(text, num_keywords=num_keywords)
+        result = extract_keywords(payload.text, num_keywords=payload.num_keywords)
         return KeywordResponse(
             keywords=result["keywords"],
             score=result.get("score"),
@@ -45,11 +48,11 @@ async def extract(
     summary="Extract keyphrases from provided text",
 )
 async def keyphrases(
-    text: str,
+    payload: KeyphraseRequest,
     current_user: User = Depends(get_current_user),
 ):
     try:
-        result = extract_keyphrases(text)
+        result = extract_keyphrases(payload.text)
         return result
     except HTTPException:
         raise

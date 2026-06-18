@@ -33,6 +33,11 @@ class SummarizeResponse(BaseModel):
     mode: str
 
 
+class BatchSummarizeRequest(BaseModel):
+    texts: list[str] = Field(..., min_length=1)
+    mode: str = Field("medium", description="short, medium, detailed, bullet")
+
+
 class TranslateRequest(BaseModel):
     text: str = Field(..., min_length=1)
     source_lang: Optional[str] = Field("auto", description="Source language code")
@@ -43,6 +48,10 @@ class TranslateResponse(BaseModel):
     translated_text: str
     source_lang: str
     target_lang: str
+
+
+class LanguageDetectRequest(BaseModel):
+    text: str = Field(..., min_length=1)
 
 
 class TTSRequest(BaseModel):
@@ -109,10 +118,27 @@ class AnalyticsResponse(BaseModel):
         from_attributes = True
 
 
+class SentimentRequest(BaseModel):
+    text: str = Field(..., min_length=1)
+
+
+class BatchSentimentRequest(BaseModel):
+    texts: list[str] = Field(..., min_length=1)
+
+
 class SentimentResponse(BaseModel):
     polarity: float
     subjectivity: float
     classification: str
+
+
+class KeywordRequest(BaseModel):
+    text: str = Field(..., min_length=1)
+    num_keywords: int = Field(10, ge=1, le=50, description="Number of keywords to extract")
+
+
+class KeyphraseRequest(BaseModel):
+    text: str = Field(..., min_length=1)
 
 
 class KeywordResponse(BaseModel):
@@ -123,6 +149,11 @@ class KeywordResponse(BaseModel):
 class QARequest(BaseModel):
     text: str = Field(..., min_length=1)
     question: str = Field(..., min_length=1)
+
+
+class QuestionGenerationRequest(BaseModel):
+    text: str = Field(..., min_length=1)
+    num_questions: int = Field(5, ge=1, le=20, description="Number of questions to generate")
 
 
 class QAResponse(BaseModel):
@@ -151,5 +182,6 @@ class ReportRequest(BaseModel):
 
 
 class ReportResponse(BaseModel):
+    filename: str
     report_url: str
     generated_at: datetime

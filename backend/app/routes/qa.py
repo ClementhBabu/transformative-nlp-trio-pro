@@ -1,11 +1,11 @@
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database.database import get_db
 from app.database.models import User
-from app.schemas.processing import QARequest, QAResponse
+from app.schemas.processing import QARequest, QAResponse, QuestionGenerationRequest
 from app.services.qa_service import ask_question, generate_questions
 from app.utils.auth import get_current_user
 
@@ -45,12 +45,11 @@ async def ask(
     summary="Auto-generate questions about the provided text",
 )
 async def generate(
-    text: str,
-    num_questions: int = Query(5, ge=1, le=20, description="Number of questions to generate"),
+    payload: QuestionGenerationRequest,
     current_user: User = Depends(get_current_user),
 ):
     try:
-        result = generate_questions(text, num_questions=num_questions)
+        result = generate_questions(payload.text, num_questions=payload.num_questions)
         return result
     except HTTPException:
         raise

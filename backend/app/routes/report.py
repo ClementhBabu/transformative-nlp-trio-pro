@@ -34,6 +34,7 @@ async def generate_report_endpoint(
     try:
         result = generate_report(db, current_user, payload.history_id)
         return ReportResponse(
+            filename=result["filename"],
             report_url=result["report_url"],
             generated_at=result["generated_at"],
         )
