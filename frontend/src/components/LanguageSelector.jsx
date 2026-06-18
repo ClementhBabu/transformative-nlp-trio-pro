@@ -39,6 +39,7 @@ function LanguageSelector({ value, onChange, label = 'Select Language', showDete
           { code: 'ko', name: 'Korean' },
           { code: 'ar', name: 'Arabic' },
           { code: 'hi', name: 'Hindi' },
+          { code: 'te', name: 'Telugu' },
           { code: 'nl', name: 'Dutch' },
           { code: 'pl', name: 'Polish' },
           { code: 'tr', name: 'Turkish' },

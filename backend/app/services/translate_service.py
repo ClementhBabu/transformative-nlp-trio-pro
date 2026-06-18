@@ -19,6 +19,7 @@ SUPPORTED_LANGUAGES = {
     "ko": "Korean",
     "ar": "Arabic",
     "hi": "Hindi",
+    "te": "Telugu",
     "tr": "Turkish",
     "pl": "Polish",
     "sv": "Swedish",
